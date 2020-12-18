@@ -1,5 +1,5 @@
 
-uint3 get_color(int iterations)
+uint3 pallete(int iterations)
 {
     //colour pallet from https://www.color-hex.com/color-palette/4666
     int colour_index = iterations % 5;
@@ -40,7 +40,7 @@ __kernel void mandelbrot(__write_only image2d_t img)
         iterations++; 
     }
 
-    colour.xyz = get_color(iterations);
+    colour.xyz = pallete(iterations);
 
     write_imageui(img, (int2)(Px,Py) , colour);
 }
