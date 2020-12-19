@@ -41,7 +41,7 @@ int main(int argc, char **argv) {
     //CMD LINE ARGS
     if(argc < 2)
     {
-        std::cout << "Usage ./frac -d (run with default settings) -p <fractal pattern name> -xs <x scale> --xo <x offset> --f <out filename> -w <img width> -h <img height>" << std::endl;
+        std::cout << "Usage ./fract -d (run with default settings) -p <fractal pattern name> -xs <x scale> --xo <x offset> --f <out filename> -w <img width> -h <img height>" << std::endl;
         std::cout << "\nAvailable fractal patterns:\nmandelbrot\nnewton" << std::endl;
         
         return 1;
