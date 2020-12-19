@@ -1,5 +1,5 @@
 
-uint3 pallete(int iterations)
+uint3 palette(int iterations)
 {
     //colour pallet from https://www.color-hex.com/color-palette/4666
     int colour_index = iterations % 5;
@@ -15,7 +15,7 @@ uint3 pallete(int iterations)
 
 
 
-__kernel void mandelbrot(__write_only image2d_t img)
+__kernel void mandelbrot(__write_only image2d_t img, const float xscale, const float yscale, const float xoffset, const float yoffset)
 {
     int Px = get_global_id(0);
     int Py = get_global_id(1);
@@ -23,8 +23,8 @@ __kernel void mandelbrot(__write_only image2d_t img)
     uint4 colour = (uint4)(255,255,255,255);
 
     //from https://en.wikipedia.org/wiki/Mandelbrot_set#Computer_drawings
-    float x0 = ((float) Px / size.x)* 3.25 - 2.0;
-    float y0 = ((float) Py / size.y) * 2.0 -1.0;
+    float x0 = ((float) Px / size.x)* (3.5 * xscale) - 2.0 + xoffset;
+    float y0 = ((float) Py / size.y) * (2 * yscale) - 1 + yoffset;
 
     float x = 0.0; 
     float y = 0.0;
@@ -40,7 +40,7 @@ __kernel void mandelbrot(__write_only image2d_t img)
         iterations++; 
     }
 
-    colour.xyz = pallete(iterations);
+    colour.xyz = palette(iterations);
 
     write_imageui(img, (int2)(Px,Py) , colour);
 }

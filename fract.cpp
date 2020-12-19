@@ -7,13 +7,118 @@
 #include <fstream>
 #include <string>
 #include <iostream>
+#include <algorithm>
+#include <stdlib.h>
+
+//https://stackoverflow.com/questions/865668/how-to-parse-command-line-arguments-in-c
+char* getCmdOption(char ** begin, char ** end, const std::string & option)
+{
+    char ** itr = std::find(begin, end, option);
+    if (itr != end && ++itr != end)
+    {
+        return *itr;
+    }
+    return 0;
+}
+
+std::vector<std::string> VALID_PATTERNS = {"mandelbrot", "newton"};
 
  
-int main(void) {
+int main(int argc, char **argv) {
+
+    size_t img_height = 1080;
+    size_t img_width = 1920;
+    size_t TS = 10; //just being lazy : ) 
+
+    float xoffset = 0;
+    float yoffset = 0;
+    float xscale = 1;
+    float yscale = 1;
+
+    std::string frac_pattern = "mandelbrot";
+    std::string filename = "fract.png";
+
+    //CMD LINE ARGS
+    if(argc < 2)
+    {
+        std::cout << "Usage ./frac -d (run with default settings) -p <fractal pattern name> -xs <x scale> --xo <x offset> --f <out filename> -w <img width> -h <img height>" << std::endl;
+        std::cout << "\nAvailable fractal patterns:\nmandelbrot\nnewton" << std::endl;
+        
+        return 1;
+    }
+    char * option;
+
+    option = getCmdOption(argv, argv + argc, "-p");
+    if (option)
+    {
+        std::string pat(option);
+        std::vector<std::string>::iterator it = std::find(VALID_PATTERNS.begin(), VALID_PATTERNS.end(), pat);
+        if(it != VALID_PATTERNS.end())
+        {
+            frac_pattern = pat;
+        }
+        else
+        {
+            std::cout << "Invalid pattern" << std::endl;
+            std::cout << "fractal pattern names:\nmandelbrot\nnewton" << std::endl;
+            return 1;
+        }
+    }
+
+    option = getCmdOption(argv, argv + argc, "-f");
+    if (option)
+    {
+        filename = std::string(option);
+    }
+
+    option = getCmdOption(argv, argv + argc, "-xs");
+    if (option)
+    {
+        xscale = atof(option);
+    }
+
+    option = getCmdOption(argv, argv + argc, "-xo");
+    if (option)
+    {
+        xoffset = atof(option);
+    }
+
+    option = getCmdOption(argv, argv + argc, "-ys");
+    if (option)
+    {
+        yscale = atof(option);
+    }
+
+    option = getCmdOption(argv, argv + argc, "-yo");
+    if (option)
+    {
+        yoffset = atof(option);
+    }
+
+    option = getCmdOption(argv, argv + argc, "-w");
+    if (option)
+    {
+        
+        img_width = (size_t) std::stoi(option);
+    }
+
+    option = getCmdOption(argv, argv + argc, "-h");
+    if (option)
+    {
+        img_height = (size_t) std::stoi(option);
+    }
+    if(img_width %10 != 0 || img_height %10 != 0 )
+    {
+        std::cout << "image height/width must be divisible by 10!" << std::endl;
+        return 1;
+    }
+
+
+
     
-    const int img_height = 1080;
-    const int img_width = 1920;
-    const int TS = 30;
+
+    //OPENCL 
+
 
     std::vector<unsigned char> img_data(img_height * img_width * 4); //RGB IMAGE
 
@@ -36,7 +141,8 @@ int main(void) {
 
 
     // Load the kernel source code into the array source_str
-    std::ifstream file("fract.cl");
+    //std::ifstream file("fract.cl");
+    std::ifstream file(frac_pattern + ".cl");
 
     std::string source_string;
     std::string line;
@@ -78,28 +184,29 @@ int main(void) {
     auto x = source_string.size();
     auto* ptr = &source_string[0];
     cl_program program = clCreateProgramWithSource(context, 1, (const char **) &ptr, (const size_t *)&x, &ret);
-    std::cout << ret << std::endl;
 
 
     ret = clBuildProgram(program, 1, &device_id, NULL ,NULL, NULL);
     if(ret != CL_SUCCESS)
     {
         std::cout << "Could not build the kernel program" << std::endl;
-    }
-    std::cout << ret << std::endl;
- 
+    } 
 
-    cl_kernel kernel = clCreateKernel(program, "mandelbrot", &ret);
-
+    cl_kernel kernel = clCreateKernel(program, frac_pattern.c_str(), &ret); 
 
 
     cl_mem cl_img = clCreateImage(context, CL_MEM_WRITE_ONLY, &img_format, &img_desc, NULL, &ret);
     if(ret != CL_SUCCESS)
     {
-        std::cout << "Error createing image" << std::endl;
+        std::cout << "Error creating image" << std::endl;
         return 1;
     }
     ret = clSetKernelArg(kernel, 0, sizeof(cl_img), &cl_img);
+    ret = clSetKernelArg(kernel, 1, sizeof(float), &xscale);
+    ret = clSetKernelArg(kernel, 2, sizeof(float), &yscale);
+    ret = clSetKernelArg(kernel, 3, sizeof(float), &xoffset);
+    ret = clSetKernelArg(kernel, 4, sizeof(float), &yoffset);
+
 
     const size_t global_item_size[2] = {img_width , img_height}; 
     const size_t local_item_size[2] = {TS, TS}; 
@@ -112,10 +219,11 @@ int main(void) {
     ret = clFlush(command_queue);
     ret = clFinish(command_queue);
 
-    std::cout << "done" << std::endl;
+    std::cout << "Rendered image" << std::endl;
 
     //write image out
-    unsigned error = lodepng::encode("test.png", img_data, img_width, img_height);
+    std::cout << "Creating png and writing to disk..." << std::endl;
+    unsigned error = lodepng::encode(filename, img_data, img_width, img_height);
 
  
 

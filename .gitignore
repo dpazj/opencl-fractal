@@ -1,0 +1,5 @@
+.vscode/
+
+*png
+!mandelbrot.png
+!newton.png
