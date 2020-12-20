@@ -12,7 +12,7 @@ make
 
 # Usage
 ```
-Usage: ./fract -d (run with default settings) -p <fractal pattern name> -xs <x scale> --xo <x offset> --f <out filename> -w <img width> -h <img height>
+Usage: ./fract -d (run with default settings) -p <fractal pattern name> -xs <x scale> -ys <y scale> -xo <x offset> -yo <y offset> -f <out filename> -w <img width> -h <img height>
 ```
 ## example
 ```
