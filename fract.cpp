@@ -190,6 +190,7 @@ int main(int argc, char **argv) {
     if(ret != CL_SUCCESS)
     {
         std::cout << "Could not build the kernel program" << std::endl;
+        return 1;
     } 
 
     cl_kernel kernel = clCreateKernel(program, frac_pattern.c_str(), &ret); 

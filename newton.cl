@@ -46,17 +46,6 @@ cl_complex roots(int i)
     }
 }
 
-uint3 palette(int i)
-{
-    i = i % 3;
-    switch(i)
-    {
-        case 0: return (uint3) (178,216,216);
-        case 1: return (uint3) (102,178,178); 
-        case 2: return (uint3) (0,128,128);  
-    }
-}
-
 
 // //z^3 - 1
 inline cl_complex func(const cl_complex* z)
@@ -77,6 +66,11 @@ float abs_complex(const cl_complex* a)
 
 __kernel void newton(__write_only image2d_t img, const float xscale, const float yscale, const float xoffset, const float yoffset)
 {
+    uint3 p[3]; //for some reason initializing inline gives strange colours {(uint3)(178,216,216), (uint3)(102,178,178), (uint3)(0,128,128), (uint3)(0,102,102), (uint3)(0,76,76)};
+    p[0] = (uint3)(178,216,216);
+    p[1] = (uint3)(102,178,178);
+    p[2] = (uint3)(0,128,128);
+
     int Px = get_global_id(0);
     int Py = get_global_id(1);
     int2 size = get_image_dim(img);
@@ -111,7 +105,7 @@ __kernel void newton(__write_only image2d_t img, const float xscale, const float
             cl_complex difference = z - roots(i);
             if(fabs(difference.x) < tolerance && fabs(difference.y) < tolerance)
             {
-                colour.xyz = palette(i);
+                colour.xyz = p[i%3];
             }
         }
         
